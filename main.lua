@@ -170,7 +170,7 @@ local _get_current_project = ya.sync(function(state)
         -- store user-set custom name ('tab.pref.name') if non-empty;
         -- don't use 'tab.name', which falls back to the directory name
         local name = ""
-        if tab.pref and tab.pref.name then
+        if tab.pref and tab.pref.name and tab.pref.name ~= "" then
             name = tab.pref.name
         end
 
