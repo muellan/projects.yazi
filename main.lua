@@ -167,9 +167,17 @@ local _get_current_project = ya.sync(function(state)
     }
 
     for index, tab in ipairs(tabs) do
+        -- store user-set custom name ('tab.pref.name') if non-empty;
+        -- don't use 'tab.name', which falls back to the directory name
+        local name = ""
+        if tab.pref and tab.pref.name then
+            name = tab.pref.name
+        end
+
         project.tabs[#project.tabs + 1] = {
             idx = index,
             cwd = tostring(tab.current.cwd):gsub("\\", "/"),
+            name = name,
         }
     end
 
@@ -238,6 +246,10 @@ local load_project = ya.sync(function(state, project, desc)
     end
     for _, tab in pairs(sorted_tabs) do
         ya.emit("tab_create", { tab.cwd })
+        -- if available, rename freshly-created (focused) tab with custom name
+        if tab.name and tab.name ~= "" then
+            ya.emit("tab_rename", { tab.name })
+        end
     end
 
     ya.emit("tab_close", { 0 })
@@ -337,6 +349,10 @@ end)
 
 local _merge_tab = ya.sync(function(state, tab)
     ya.emit("tab_create", { tab.cwd })
+    -- if available, rename freshly-created (focused) tab with custom name
+    if tab.name and tab.name ~= "" then
+        ya.emit("tab_rename", { tab.name })
+    end
 end)
 
 local _merge_event = ya.sync(function(state)
