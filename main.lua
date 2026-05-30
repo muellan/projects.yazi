@@ -184,6 +184,14 @@ local _get_current_project = ya.sync(function(state)
     return project
 end)
 
+local _restore_tab = ya.sync(function(state, tab)
+    ya.emit("tab_create", { tab.cwd })
+    -- if available, rename freshly-created (focused) tab with custom name
+    if tab.name then
+        ya.emit("tab_rename", { tab.name })
+    end
+end)
+
 local _save_projects = ya.sync(function(state, projects)
     state.projects = projects
 
@@ -245,11 +253,7 @@ local load_project = ya.sync(function(state, project, desc)
         sorted_tabs[tonumber(tab.idx)] = tab
     end
     for _, tab in pairs(sorted_tabs) do
-        ya.emit("tab_create", { tab.cwd })
-        -- if available, rename freshly-created (focused) tab with custom name
-        if tab.name and tab.name ~= "" then
-            ya.emit("tab_rename", { tab.name })
-        end
+        _restore_tab(tab)
     end
 
     ya.emit("tab_close", { 0 })
@@ -347,14 +351,6 @@ local merge_project = ya.sync(function(state, opt)
     end
 end)
 
-local _merge_tab = ya.sync(function(state, tab)
-    ya.emit("tab_create", { tab.cwd })
-    -- if available, rename freshly-created (focused) tab with custom name
-    if tab.name and tab.name ~= "" then
-        ya.emit("tab_rename", { tab.name })
-    end
-end)
-
 local _merge_event = ya.sync(function(state)
     ps.sub_remote(state.merge.event, function(body)
         if body then
@@ -368,7 +364,7 @@ local _merge_event = ya.sync(function(state)
                 end
 
                 for _, tab in ipairs(sorted_tabs) do
-                    _merge_tab(tab)
+                    _restore_tab(tab)
                 end
 
                 if state.notify.enable then
@@ -377,7 +373,7 @@ local _merge_event = ya.sync(function(state)
                 end
             elseif opt == "current" then
                 local tab = body.tabs[tonumber(body.active_idx)]
-                _merge_tab(tab)
+                _restore_tab(tab)
 
                 if state.notify.enable then
                     local message = "A tab is merged"
